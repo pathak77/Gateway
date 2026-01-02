@@ -1,34 +1,30 @@
-local jwt = require("resty.jwt")  -- Corrected to the proper module for OpenResty JWT
-local json = require("cjson")     -- Ensure that cjson is required for JSON encoding/decoding
+local _M ={}
 
-local key = " --- the key --- "   -- Define your secret key here
+local jwt = require("resty.jwt")
+local cjson = require("cjson")
 
-local jwtToken = "fetch token"    -- Your JWT token goes here
+local key = os.getenv("JWT_SECRET")
 
--- Decode the JWT token
-local decoded, err = jwt:decode(jwtToken, key, { algorithms = { "HS256" } })
+function _M.check()
+	
+	local auth_header = ngx.var.http_Authorization
+	if not auth_header then
+		return nil, "Missing Auth Header"
+	end
 
--- Check if the token is decoded successfully
-if decoded then
-    validate(decoded)  -- Pass the decoded payload to the validate function
-    print("Validating the payload: " .. json.encode(decoded))
-else
-    print("Token validation error: " .. (err or "Unknown error"))
-end
+	local token = auth_header:match("Bearer%s+(.+)")
 
--- Function to validate the JWT payload
-function validate(decodedPayload)
-    local user_id = decodedPayload.sub  -- Extract the user ID (subject)
-    local expiration_time = decodedPayload.exp  -- Extract the expiration time
-    local current_time = os.time()  -- Get the current timestamp
+	if not token then
+		return nil, "Invalid Authorization Token format"
+	end
 
-    print("Subject (User ID): " .. user_id)
+	local jwt_obj = jwt:verify(key, token)
 
-    -- Check if the token is expired
-    if expiration_time and expiration_time < current_time then
-        print("Error: Token has expired.")
-    else
-        print("Token is valid.")
-    end
-end
+	if not jwt_obj.verified then 
+		return nil, jwt_obj.reason
+	end
 
+	return jwt_obj.payload, nil
+end 
+
+return _M
