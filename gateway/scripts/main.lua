@@ -6,10 +6,7 @@ local payload, err = valid.check()
 
 if err then
 	
-	ngx.status = 401
-	ngx.header.content_type = "application/json"
-	ngx.say(cjson.encode({ status = "error", message = "AUTHENTICAITON FAILURE" ..(err or "Unknown error") }))
-	return ngx.exit(401)
+	return ngx.redirect("http://localhost:5050/login", 302)
 
 end
 

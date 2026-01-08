@@ -63,6 +63,8 @@ function _M.is_allowed(user_id)
 
     local red = redis:new()
    
+    red:set_timeout(1000)
+
     local ok, err = red:connect("redis", 6379)
 
 	if not ok then 
@@ -70,7 +72,7 @@ function _M.is_allowed(user_id)
         return false
 	end 
 	   
-	local res, err = red:eval(BUCKET_LOGIC, 1, user_id, ngx.now(), 1, 10, 10, 10)
+	local res, err = red:eval(BUCKET_LOGIC, 1, user_id, 0.1, ngx.now(), 10, 10, 10)
     
     return res == 1
     
