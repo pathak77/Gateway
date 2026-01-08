@@ -72,8 +72,7 @@ function _M.is_allowed(user_id)
         return false
 	end 
 	   
-	local res, err = red:eval(BUCKET_LOGIC, 1, user_id, 0.1, ngx.now(), 10, 10, 10)
-    
+    local res, err = red:eval(BUCKET_LOGIC, 1, user_id, 1, ngx.now(), 10, 10, 60)
     return res == 1
     
     

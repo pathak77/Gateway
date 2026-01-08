@@ -9,7 +9,6 @@ function _M.check()
 	
 	local auth_header = ngx.var.http_Authorization
 	if not auth_header then
-		ngx.
 		return nil, "Missing Auth Header"
 	end
 
