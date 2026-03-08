@@ -73,6 +73,13 @@ function _M.is_allowed(user_id)
 	end 
 	   
     local res, err = red:eval(BUCKET_LOGIC, 1, user_id, 1, ngx.now(), 10, 10, 60)
+
+    local ok, pool_err = red:set_keepalive(10000, 100) 
+
+    if not ok then
+        ngx.log(ngx.ERR, "Failed to set keepalive: ", pool_err)
+    end
+
     return res == 1
     
     
