@@ -21,15 +21,17 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"
+    ports:
+      - "8500:5000"
     depends_on:
       auth-db:
         condition: service_healthy
-    healthcheck:  
-      test: ["CMD-SHELL", "nc -z localhost 5000 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+    # healthcheck:  
+    #   test: ["CMD-SHELL", "nc -z localhost 5000 || exit 1"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+    #   start_period: 20s
 
   auth-db:
     image: postgres:16
@@ -49,13 +51,13 @@ services:
       start_period: 10s
 
   api_gateway:
-    image: openresty/openresty:alpine
+    build: ./gateway
     container_name: api_gateway
     ports:
-      - "80:80"
+      - "3300:80"
     volumes:
-      - ./nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
-      - ./lua:/usr/local/openresty/nginx/lua:ro
+      - ./gateway/conf/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+      - ./gateway/scripts:/usr/local/openresty/nginx/lua:ro
     environment:
       - JWT_SECRET=${JWT_SECRET}
     depends_on:
