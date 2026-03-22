@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  backend_service:
+    image: demo_image_file
+    restart: unless-stopped
+    depends_on: 
+    - auth_service
+
+
+  auth_service:
+    image: auth_service
+    restart: unless-stopped
+    environment:
+      HTTP_PORT: "5000"
+      SECURITY_JWT_EXPIRATION_TIME: "3600000"
+      SECURITY_JWT_SECRET_KEY: ${JWT_SECRET}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: "org.postgresql.Driver"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://auth-db:5432/db"
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    healthcheck:  
+      test: ["CMD-SHELL", "nc -z localhost 5000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  auth-db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: db
+    
+    volumes:
+      - auth-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d db"]
+      interval: 5s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
+
+  api_gateway:
+    image: openresty/openresty:alpine
+    container_name: api_gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+      - ./lua:/usr/local/openresty/nginx/lua:ro
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - redis
+      - auth_service
+      - backend_service
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+
+volumes:
+  auth-postgres-data:

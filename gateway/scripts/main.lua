@@ -6,7 +6,7 @@ local payload, err = valid.check()
 
 if err then
 	
-	return ngx.redirect("http://localhost:5050/login", 302)
+	return ngx.redirect("http://localhost:5000/login", 302)
 
 end
 
